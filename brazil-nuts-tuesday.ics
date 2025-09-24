@@ -1,0 +1,126 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Brazil Nuts//Calgary Volleyball Tuesday Games//EN
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Brazil Nuts - Tuesday Games
+X-WR-TIMEZONE:America/Edmonton
+
+BEGIN:VTIMEZONE
+TZID:America/Edmonton
+BEGIN:DAYLIGHT
+TZOFFSETFROM:-0700
+TZOFFSETTO:-0600
+TZNAME:MDT
+DTSTART:20250309T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:-0600
+TZOFFSETTO:-0700
+TZNAME:MST
+DTSTART:20251102T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+END:STANDARD
+END:VTIMEZONE
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20250923T203000-BRAZILNUTS-TUES-01@yourdomain.com
+DTSTART;TZID=America/Edmonton:20250923T203000
+DTEND;TZID=America/Edmonton:20250923T220000
+SUMMARY:Game: Brazil Nuts vs Smash Burgers & I'd Hit That
+LOCATION:Dr. Gordon Higgins - 155 Rundlehill Dr NE
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: Smash Burgers vs Brazil Nuts. Match 2: I'd Hit That vs Brazil Nuts. Nearest Sponsor Bar: The Canadian Brewhouse - Northgate.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20250930T210000-BRAZILNUTS-TUES-02@yourdomain.com
+DTSTART;TZID=America/Edmonton:20250930T210000
+DTEND;TZID=America/Edmonton:20250930T223000
+SUMMARY:Game: Brazil Nuts vs Arthur's Secrets & Net Noobs
+LOCATION:H.C.A. - East - 2003 McKnight Blvd NE
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: Arthur's Secrets vs Brazil Nuts. Match 2: Net Noobs vs Brazil Nuts. Nearest Sponsor Bar: The Canadian Brewhouse - Northgate.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251007T183000-BRAZILNUTS-TUES-03@yourdomain.com
+DTSTART;TZID=America/Edmonton:20251007T183000
+DTEND;TZID=America/Edmonton:20251007T200000
+SUMMARY:Game: Brazil Nuts vs Spike-a-Saurus Rex & Jets
+LOCATION:Haultain Memorial - 605 Queensland Dr SE
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: Brazil Nuts vs Individuals Team - Spike-a-Saurus Rex. Match 2: Brazil Nuts vs Jets. Nearest Sponsor Bar: Austin's Bar & Grill.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251014T204500-BRAZILNUTS-TUES-04@yourdomain.com
+DTSTART;TZID=America/Edmonton:20251014T204500
+DTEND;TZID=America/Edmonton:20251014T221500
+SUMMARY:Game: Brazil Nuts vs I'd Hit That & Arthur's Secrets
+LOCATION:G.C.A. West - 16520 24 St SW
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: I'd Hit That vs Brazil Nuts. Match 2: Brazil Nuts vs Arthur's Secrets. Nearest Sponsor Bar: Rockwell Food + Taps.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251021T183000-BRAZILNUTS-TUES-05@yourdomain.com
+DTSTART;TZID=America/Edmonton:20251021T183000
+DTEND;TZID=America/Edmonton:20251021T200000
+SUMMARY:Game: Brazil Nuts vs Jurassic Jumpers & Smash Burgers
+LOCATION:Abbeydale - 320 Abergale Dr NE
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: Individuals Team - Jurassic Jumpers vs Brazil Nuts. Match 2: Brazil Nuts vs Smash Burgers. Nearest Sponsor Bar: The Canadian Brewhouse - Northgate.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251028T203000-BRAZILNUTS-TUES-06@yourdomain.com
+DTSTART;TZID=America/Edmonton:20251028T203000
+DTEND;TZID=America/Edmonton:20251028T220000
+SUMMARY:Game: Brazil Nuts vs Jets & Spike-a-Saurus Rex
+LOCATION:G.W. Skene - 6226 Penbrooke Dr SE
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: Brazil Nuts vs Jets. Match 2: Brazil Nuts vs Individuals Team - Spike-a-Saurus Rex. Nearest Sponsor Bar: The Canadian Brewhouse - Northgate.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251104T190000-BRAZILNUTS-TUES-07@yourdomain.com
+DTSTART;TZID=America/Edmonton:20251104T190000
+DTEND;TZID=America/Edmonton:20251104T203000
+SUMMARY:Game: Brazil Nuts vs Net Noobs & Jurassic Jumpers
+LOCATION:SmashCity - 4839 47 St SE
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: Net Noobs vs Brazil Nuts. Match 2: Individuals Team - Jurassic Jumpers vs Brazil Nuts. Nearest Sponsor Bar: The Canadian Brewhouse - Northgate.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251111T000000-BRAZILNUTS-TUES-BYE@yourdomain.com
+DTSTART;VALUE=DATE:20251111
+DTEND;VALUE=DATE:20251112
+SUMMARY:BYE WEEK - Remembrance Day
+LOCATION:No Game
+DESCRIPTION:All teams have a bye this week due to Remembrance Day!
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251118T203000-BRAZILNUTS-TUES-08@yourdomain.com
+DTSTART;TZID=America/Edmonton:20251118T203000
+DTEND;TZID=America/Edmonton:20251118T220000
+SUMMARY:Game: Brazil Nuts vs I'd Hit That & Smash Burgers
+LOCATION:Haultain Memorial - 605 Queensland Dr SE
+DESCRIPTION:Calgary Sport and Social Club Volleyball. Match 1: I'd Hit That vs Brazil Nuts. Match 2: Smash Burgers vs Brazil Nuts. Nearest Sponsor Bar: Austin's Bar & Grill.
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTAMP:20250921T084303Z
+UID:20251125T210000-BRAZILNUTS-TUES-PLAYOFFS@yourdomain.com
+DTSTART;TZID=America/Edmonton:20251125T210000
+DTEND;TZID=America/Edmonton:20251125T230000
+SUMMARY:Playoffs - Tuesday League
+LOCATION:J.V.C - 130 - 10 Smed Ln SE
+DESCRIPTION:Playoff Games. Your team's match time will depend on your final standing. Check the schedule for specific pairings. Nearest Sponsor Bar: The Station Pub + Grill.
+END:VEVENT
+
+END:VCALENDAR

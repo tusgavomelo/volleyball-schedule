@@ -1,0 +1,86 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Thursdays League//Brazil Nuts//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:thu-0@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20250925T210000
+DTEND;TZID=America/Edmonton:20250925T223000
+LOCATION:H.C.A. - East - 2003 McKnight Blvd NE
+DESCRIPTION:Brazil Nuts vs Set and Reset\nBumpin' Balls vs Brazil Nuts
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-1@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20251002T203000
+DTEND;TZID=America/Edmonton:20251002T220000
+LOCATION:Mid Sun C.C. - 50 Midpark Rise SE
+DESCRIPTION:Volley Llamas vs Brazil Nuts\nBrazil Nuts vs Set and Reset
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-2@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20251009T190000
+DTEND;TZID=America/Edmonton:20251009T203000
+LOCATION:MNP Centre - Gym 5 - 2225 Macleod Trail SE
+DESCRIPTION:Brazil Nuts vs Can't Touch This\nVolley Llamas vs Brazil Nuts
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-3@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20251016T204500
+DTEND;TZID=America/Edmonton:20251016T221500
+LOCATION:Genesis - Community - 7556 Falconridge Blvd NE
+DESCRIPTION:Brazil Nuts vs Bumping Uglies\nBumpin' Balls vs Brazil Nuts
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-4@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20251023T204500
+DTEND;TZID=America/Edmonton:20251023T221500
+LOCATION:SmashCity - 4839 47 St SE
+DESCRIPTION:Brazil Nuts vs Notorious D.I.G.\nBrazil Nuts vs Muffin Stuffers
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-5@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20251030T190000
+DTEND;TZID=America/Edmonton:20251030T203000
+LOCATION:SmashCity - 4839 47 St SE
+DESCRIPTION:Volley Llamas vs Brazil Nuts\nBrazil Nuts vs Bumping Uglies
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-6@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20251106T204500
+DTEND;TZID=America/Edmonton:20251106T221500
+LOCATION:G.C.A. West - 16520 24 St SW
+DESCRIPTION:Brazil Nuts vs Notorious D.I.G.\nBrazil Nuts vs Muffin Stuffers
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-7@brazilnuts
+SUMMARY:Brazil Nuts Games
+DTSTART;TZID=America/Edmonton:20251113T210000
+DTEND;TZID=America/Edmonton:20251113T223000
+LOCATION:J.V.C. - 130 - 10 Smed Ln SE
+DESCRIPTION:Brazil Nuts vs Can't Touch This\nBrazil Nuts vs Set and Reset
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-8@brazilnuts
+SUMMARY:Brazil Nuts Playoffs (Top Bracket)
+DTSTART;TZID=America/Edmonton:20251120T183000
+DTEND;TZID=America/Edmonton:20251120T200000
+LOCATION:Mid Sun C.C. - 50 Midpark Rise SE
+DESCRIPTION:1st Place vs 4th Place\n2nd Place vs 3rd Place\nWinner(1st vs 4th) vs Winner(2nd vs 3rd) - League Champ Game!\nLoser(1st vs 4th) vs Loser(2nd vs 3rd)
+END:VEVENT
+BEGIN:VEVENT
+UID:thu-9@brazilnuts
+SUMMARY:Brazil Nuts Playoffs (Bottom Bracket)
+DTSTART;TZID=America/Edmonton:20251120T203000
+DTEND;TZID=America/Edmonton:20251120T220000
+LOCATION:Mid Sun C.C. - 50 Midpark Rise SE
+DESCRIPTION:5th Place vs 8th Place\n6th Place vs 7th Place\nWinner(5th vs 8th) vs Winner(6th vs 7th)\nLoser(5th vs 8th) vs Loser(6th vs 7th)
+END:VEVENT
+END:VCALENDAR
