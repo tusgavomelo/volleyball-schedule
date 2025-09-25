@@ -64,7 +64,10 @@ function buildICS(events = [], sourceUrl, calendarName) {
 	const header = headerLines.join('\r\n');
 
 	const body = events.map((ev, i) => {
-		const uid = ev.uid || `${Date.now()}-${i}@volleyball-schedule`;
+		// Create a stable UID per event so repeated runs produce the same file when content hasn't changed.
+		// Use start time + summary hash as the UID source.
+		const uidBase = ev.uid || `${ev.start.toISOString()}|${ev.summary}`;
+		const uid = `${Buffer.from(uidBase).toString('base64').replace(/=/g, '')}-${i}@volleyball-schedule`;
 		return [
 			'BEGIN:VEVENT',
 			`UID:${uid}`,
@@ -210,8 +213,23 @@ async function main() {
 						const calName = icsName && icsName.toLowerCase().endsWith('.ics') ? icsName.slice(0, -4) : icsName;
 						const ics = buildICS(toShow, url, calName);
 						const icsPath = path.join(GENERATED_DIR, icsName);
-						fs.writeFileSync(icsPath, ics, 'utf8');
-						console.log(`\nWrote ${toShow.length} events to ${icsPath}`);
+
+						// If file exists, compare normalized contents (ignore DTSTAMP and UID lines) and only overwrite if different
+						let shouldWrite = true;
+						if (fs.existsSync(icsPath)) {
+							const old = fs.readFileSync(icsPath, 'utf8');
+							const normalize = (s) => s.split(/\r?\n/).filter(l => !l.startsWith('DTSTAMP:') && !/^UID:/.test(l)).join('\n').trim();
+							if (normalize(old) === normalize(ics)) {
+								shouldWrite = false;
+							}
+						}
+
+						if (shouldWrite) {
+							fs.writeFileSync(icsPath, ics, 'utf8');
+							console.log(`\nWrote ${toShow.length} events to ${icsPath}`);
+						} else {
+							console.log(`\nNo changes detected in ${icsPath}; not updating file.`);
+						}
 					} catch (err) {
 						console.warn('Failed to write ICS:', String(err));
 					}
