@@ -1,0 +1,51 @@
+name: Run volleyball-schedule
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Schedule page URL'
+        required: true
+      team_id:
+        description: 'Team ID to filter events for'
+        required: true
+      ics_name:
+        description: 'Optional ICS filename to write into ./generated/ (if omitted the job will run read-only)'
+        required: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Ensure generated directory exists
+        run: mkdir -p generated
+
+      - name: Run scraper
+        id: run_scraper
+        run: |
+          echo "Running scraper with URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} ICS=${{ inputs.ics_name }}"
+          node index.js "${{ inputs.url }}" "${{ inputs.team_id }}" "${{ inputs.ics_name }}"
+
+      - name: Upload raw HTML
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-html
+          path: data/raw.html
+
+      - name: Upload generated ICS
+        if: ${{ inputs.ics_name != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-ics
+          path: generated/${{ inputs.ics_name }}

@@ -5,5 +5,8 @@
   "main": "index.js",
   "repository": "https://github.com/tusgavomelo/volleyball-schedule",
   "author": "Gustavo Melo <gcastromelo94@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "jsdom": "^27.0.0"
+  }
 }
