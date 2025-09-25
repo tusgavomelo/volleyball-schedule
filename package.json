@@ -1,0 +1,9 @@
+{
+  "name": "volleyball-schedule",
+  "version": "1.0.0",
+  "description": "scrapes volleyball league schedule and generate .ics files",
+  "main": "index.js",
+  "repository": "https://github.com/tusgavomelo/volleyball-schedule",
+  "author": "Gustavo Melo <gcastromelo94@gmail.com>",
+  "license": "MIT"
+}
