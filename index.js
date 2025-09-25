@@ -85,7 +85,8 @@ function buildICS(events = [], sourceUrl, calendarName) {
 async function main() {
 	console.log('Fetching', url);
 	const raw = await fetchUrl(url);
-	const rawPath = path.join(OUT_DIR, 'raw.html');
+	// Save raw HTML at project root for easier inspection; do not track this file in git
+	const rawPath = path.join(__dirname, 'raw.html');
 	fs.writeFileSync(rawPath, raw, 'utf8');
 	console.log('Saved raw HTML to', rawPath);
 
