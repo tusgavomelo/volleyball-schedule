@@ -3,10 +3,14 @@
 // Usage: node index.js [URL] [TEAM_ID]
 // Example: node index.js <url> 132313
 
-const fs = require('fs');
-const path = require('path');
-const https = require('https');
-const { JSDOM } = require('jsdom');
+import fs from 'fs';
+import path from 'path';
+import got from 'got';
+import * as cheerio from 'cheerio';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const OUT_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -30,59 +34,32 @@ if (WRITE_ICS) {
 	if (!fs.existsSync(GENERATED_DIR)) fs.mkdirSync(GENERATED_DIR, { recursive: true });
 }
 
-function fetchUrl(u) {
-	return new Promise((resolve, reject) => {
-		const zlib = require('zlib');
-		const MAX_REDIRECTS = 5;
+async function fetchUrl(u) {
+	const headers = {
+		'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
+		'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+	};
+	const opts = {
+		headers,
+		responseType: 'text',
+		retry: { limit: 2 },
+		timeout: { request: 15000 },
+		decompress: true,
+		followRedirect: true
+	};
 
-		function getUrl(urlStr, redirectsLeft) {
-			if (redirectsLeft <= 0) return reject(new Error('Too many redirects'));
-			const urlObj = new URL(urlStr);
-			const options = {
-				hostname: urlObj.hostname,
-				path: urlObj.pathname + urlObj.search,
-				protocol: urlObj.protocol,
-				headers: {
-					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
-					'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-					'Accept-Encoding': 'gzip,deflate,br'
-				}
-			};
-
-			https.get(options, (res) => {
-				if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-					// follow redirect
-					const loc = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, urlStr).toString();
-					return getUrl(loc, redirectsLeft - 1);
-				}
-
-				let stream = res;
-				const enc = (res.headers['content-encoding'] || '').toLowerCase();
-				if (enc === 'gzip' || enc === 'x-gzip') stream = res.pipe(zlib.createGunzip());
-				else if (enc === 'br') stream = res.pipe(zlib.createBrotliDecompress());
-				else if (enc === 'deflate') stream = res.pipe(zlib.createInflate());
-
-				const chunks = [];
-				stream.on('data', (c) => chunks.push(c));
-				stream.on('end', () => {
-					const raw = Buffer.concat(chunks).toString('utf8');
-					// Optionally save raw HTML for debugging in CI or when explicitly requested
-					try {
-						if (process.env.GITHUB_ACTIONS === 'true' || process.env.SAVE_RAW === '1') {
-							const rawPath = path.join(OUT_DIR, 'raw.html');
-							fs.writeFileSync(rawPath, raw, 'utf8');
-							console.log('Saved raw HTML to', rawPath);
-						}
-					} catch (e) {
-						// ignore save errors
-					}
-					resolve(raw);
-				});
-			}).on('error', reject);
+	const resp = await got(u, opts);
+	const body = resp.body;
+	try {
+		if (process.env.GITHUB_ACTIONS === 'true' || process.env.SAVE_RAW === '1') {
+			const rawPath = path.join(OUT_DIR, 'raw.html');
+			fs.writeFileSync(rawPath, body, 'utf8');
+			console.log('Saved raw HTML to', rawPath);
 		}
-
-		getUrl(u, MAX_REDIRECTS);
-	});
+	} catch (e) {
+		// ignore
+	}
+	return body;
 }
 
 function toICalDate(d) {
@@ -135,69 +112,66 @@ async function main() {
 	const raw = await fetchUrl(url);
 	// Keep raw HTML in memory for parsing. We no longer persist raw.html to disk by default.
 
-	// Parse with jsdom (JSDOM is a dependency; if missing, instruct user to install)
+	// Parse with cheerio (fast, jQuery-like parsing). Keep selector heuristics from the original jsdom code.
 	let events = [];
 	try {
-		const dom = new JSDOM(raw);
-		const doc = dom.window.document;
+		const $ = cheerio.load(raw);
+		const scheduleRoot = $('.ssc-schedule-html').length ? $('.ssc-schedule-html') : $.root();
+		const weekEntries = scheduleRoot.find('.week-entry').toArray();
+		console.log('Found', weekEntries.length, 'week entries');
+		for (const weekEl of weekEntries) {
+			const week = $(weekEl);
+			const dateEl = week.find('.game_date').first();
+			const dateText = dateEl.length ? dateEl.text().trim() : null;
+			for (const allocEl of week.find('.allocation-entry').toArray()) {
+				const alloc = $(allocEl);
+				const timeEl = alloc.find('.game_time').first();
+				const timeText = timeEl.length ? timeEl.text().trim() : '';
+				const facilityEl = alloc.find('.facility_details a').first();
+				const facility = facilityEl.length ? facilityEl.text().trim() : '';
+				const coordEl = alloc.find('.event_coordinator').first();
+				const coordinator = coordEl.length ? coordEl.text().trim() : '';
 
-				// Structured parsing tailored to sample markup in sample.html
-				const scheduleRoot = doc.querySelector('.ssc-schedule-html') || doc;
-				const weekEntries = Array.from(scheduleRoot.querySelectorAll('.week-entry'));
-				console.log('Found', weekEntries.length, 'week entries');
-				for (const week of weekEntries) {
-					const dateEl = week.querySelector('.game_date');
-					const dateText = dateEl ? dateEl.textContent.trim() : null;
-					for (const alloc of Array.from(week.querySelectorAll('.allocation-entry'))) {
-						const timeEl = alloc.querySelector('.game_time');
-						const timeText = timeEl ? timeEl.textContent.trim() : '';
-						const facilityEl = alloc.querySelector('.facility_details a');
-						const facility = facilityEl ? facilityEl.textContent.trim() : '';
-						const coordEl = alloc.querySelector('.event_coordinator');
-						const coordinator = coordEl ? coordEl.textContent.trim() : '';
+				for (const meEl of alloc.find('.match-entry').toArray()) {
+					const me = $(meEl);
+					const hasTeamClass = me.hasClass(TEAM_CLASS) || me.find('.' + TEAM_CLASS).length > 0;
+					if (!hasTeamClass) continue;
 
-						for (const me of Array.from(alloc.querySelectorAll('.match-entry'))) {
-							const hasTeamClass = me.classList.contains(TEAM_CLASS) || !!me.querySelector('.' + TEAM_CLASS);
-							if (!hasTeamClass) continue;
+					const matchText = me.text().replace(/\s+/g, ' ').trim();
+					let dtString = '';
+					if (dateText) dtString = `${dateText} ${timeText}`;
+					if (dateText && !/\d{4}/.test(dateText)) dtString = `${dateText} 2025 ${timeText}`;
 
-							const matchText = me.textContent.replace(/\s+/g, ' ').trim();
-							// Build a date-time string from dateText and timeText
-							let dtString = '';
-							if (dateText) dtString = `${dateText} ${timeText}`;
-							// If dateText doesn't include a year, append 2025
-							if (dateText && !/\d{4}/.test(dateText)) dtString = `${dateText} 2025 ${timeText}`;
-
-							let start = new Date(dtString);
-							if (isNaN(start)) {
-								// try a few fallbacks: remove commas
-								const altDate = dateText ? dateText.replace(/,/g, '') : '';
-								start = new Date(`${altDate} ${timeText} 2025`);
-							}
-
-							if (isNaN(start)) {
-								// preserve unparsed match for later inspection
-								events.push({ start: new Date(NaN), end: new Date(NaN), summary: 'Volleyball (unparsed)', description: `MATCH: ${matchText} | FACILITY: ${facility} | COORD: ${coordinator}`, location: facility });
-								continue;
-							}
-
-							const end = new Date(start.getTime() + 90 * 60 * 1000);
-							// summary: prefer explicit team spans inside match-entry
-							const teamSpans = Array.from(me.querySelectorAll('span[class^="team_"]'));
-							let summary = matchText;
-							if (teamSpans.length >= 2) {
-								summary = `${teamSpans[0].textContent.trim()} vs ${teamSpans[1].textContent.trim()}`;
-							}
-
-							const descriptionParts = [];
-							if (coordinator) descriptionParts.push(coordinator);
-							if (facility) descriptionParts.push(`Facility: ${facility}`);
-							descriptionParts.push(`Raw: ${matchText}`);
-							const description = descriptionParts.join('\n');
-
-							events.push({ start, end, summary, description, location: facility });
-						}
+					let start = new Date(dtString);
+					if (isNaN(start)) {
+						const altDate = dateText ? dateText.replace(/,/g, '') : '';
+						start = new Date(`${altDate} ${timeText} 2025`);
 					}
+
+					if (isNaN(start)) {
+						events.push({ start: new Date(NaN), end: new Date(NaN), summary: 'Volleyball (unparsed)', description: `MATCH: ${matchText} | FACILITY: ${facility} | COORD: ${coordinator}`, location: facility });
+						continue;
+					}
+
+					const end = new Date(start.getTime() + 90 * 60 * 1000);
+					const teamSpans = me.find('span').filter((i, el) => /team_/.test((el.attribs && el.attribs.class) || '')).toArray();
+					let summary = matchText;
+					if (teamSpans.length >= 2) {
+						const t0 = $(teamSpans[0]).text().trim();
+						const t1 = $(teamSpans[1]).text().trim();
+						summary = `${t0} vs ${t1}`;
+					}
+
+					const descriptionParts = [];
+					if (coordinator) descriptionParts.push(coordinator);
+					if (facility) descriptionParts.push(`Facility: ${facility}`);
+					descriptionParts.push(`Raw: ${matchText}`);
+					const description = descriptionParts.join('\n');
+
+					events.push({ start, end, summary, description, location: facility });
 				}
+			}
+		}
 	} catch (err) {
 		console.warn('HTML parse failed:', String(err));
 	}
