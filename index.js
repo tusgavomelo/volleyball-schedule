@@ -88,10 +88,7 @@ function buildICS(events = [], sourceUrl, calendarName) {
 async function main() {
 	console.log('Fetching', url);
 	const raw = await fetchUrl(url);
-	// Save raw HTML at project root for easier inspection; do not track this file in git
-	const rawPath = path.join(__dirname, 'raw.html');
-	fs.writeFileSync(rawPath, raw, 'utf8');
-	console.log('Saved raw HTML to', rawPath);
+	// Keep raw HTML in memory for parsing. We no longer persist raw.html to disk by default.
 
 	// Parse with jsdom (JSDOM is a dependency; if missing, instruct user to install)
 	let events = [];

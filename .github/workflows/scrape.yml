@@ -1,5 +1,9 @@
 name: Run volleyball-schedule
 
+# Allow this workflow to update repository contents (push generated .ics files)
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
@@ -12,6 +16,9 @@ on:
       ics_name:
         description: 'Optional ICS filename to write into ./generated/ (if omitted the job will run read-only)'
         required: false
+  schedule:
+    # Run once per day (UTC) at 20:00
+    - cron: '0 20 * * *'
 
 jobs:
   scrape:
@@ -20,32 +27,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js (with npm cache)
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Ensure generated directory exists
         run: mkdir -p generated
 
-      - name: Run scraper
+      - name: Run scraper(s)
         id: run_scraper
         run: |
-          echo "Running scraper with URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} ICS=${{ inputs.ics_name }}"
-          node index.js "${{ inputs.url }}" "${{ inputs.team_id }}" "${{ inputs.ics_name }}"
+          # If workflow_dispatch provided inputs, run one scrape for that input set.
+          if [ -n "${{ inputs.url }}" ] && [ -n "${{ inputs.team_id }}" ]; then
+            echo "Manual run: URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} ICS=${{ inputs.ics_name }}"
+            node index.js "${{ inputs.url }}" "${{ inputs.team_id }}" "${{ inputs.ics_name || '' }}"
+          else
+            echo "No manual inputs provided; running schedules.json runner"
+            node scripts/run-schedules.js
+          fi
 
-      - name: Upload raw HTML
-        uses: actions/upload-artifact@v4
-        with:
-          name: raw-html
-          path: data/raw.html
+      - name: Commit and push generated ICS
+        if: always()
+        run: |
+          # Configure git user for the action
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Upload generated ICS
-        if: ${{ inputs.ics_name != '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-ics
-          path: generated/${{ inputs.ics_name }}
+          # Add generated ICS files (if any) and commit only when there are changes
+          git add generated/*.ics || true
+          if git diff --cached --quiet; then
+            echo "No generated .ics changes to commit"
+          else
+            git commit -m "chore(ci): update generated .ics (workflow run $GITHUB_RUN_ID)"
+            git push
+          fi
+
+      # Upload step removed: generated .ics files are committed and pushed to the repository
+      # The repository will be public and the raw file URLs can be used directly by Google Calendar.
