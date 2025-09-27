@@ -45,8 +45,13 @@ jobs:
         run: |
           # If workflow_dispatch provided inputs, run one scrape for that input set.
           if [ -n "${{ inputs.url }}" ] && [ -n "${{ inputs.team_id }}" ]; then
-            echo "Manual run: URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} ICS=${{ inputs.ics_name }}"
-            node index.js "${{ inputs.url }}" "${{ inputs.team_id }}" "${{ inputs.ics_name || '' }}"
+            if [ -n "${{ inputs.ics_name }}" ]; then
+              echo "Manual run: URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} ICS=${{ inputs.ics_name }}"
+              node index.js "${{ inputs.url }}" "${{ inputs.team_id }}" "${{ inputs.ics_name }}"
+            else
+              echo "Manual run: URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} (read-only)"
+              node index.js "${{ inputs.url }}" "${{ inputs.team_id }}"
+            fi
           else
             echo "No manual inputs provided; running schedules.json runner"
             node scripts/run-schedules.js
