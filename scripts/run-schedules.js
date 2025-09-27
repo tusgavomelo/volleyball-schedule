@@ -25,6 +25,28 @@ for (const s of schedules) {
     console.error('Schedule failed:', s.name);
     process.exit(res.status);
   }
+  // After successful run, add and commit the generated ICS (if any)
+  try {
+    const icsPath = path.join(__dirname, '..', 'generated', s.ics || '*.ics');
+    spawnSync('git', ['add', icsPath]);
+    const diff = spawnSync('git', ['diff', '--staged', '--quiet']);
+    if (diff.status === 0) {
+      console.log('No changes to commit for', s.name);
+    } else {
+      const when = new Date().toISOString();
+      const msg = `chore(ci): update ${s.ics || 'generated'} (schedule ${s.name} ${when})`;
+      const commit = spawnSync('git', ['-c', 'user.name=local-runner', '-c', 'user.email=local-runner@example.com', 'commit', '-m', msg], { stdio: 'inherit' });
+      if (commit.status === 0) {
+        const push = spawnSync('git', ['push'], { stdio: 'inherit' });
+        if (push.status !== 0) {
+          console.error('git push failed for', s.name);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Git commit/push step failed:', String(e));
+  }
+
   // small throttle (sleep 2s)
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
 }
