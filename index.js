@@ -32,11 +32,56 @@ if (WRITE_ICS) {
 
 function fetchUrl(u) {
 	return new Promise((resolve, reject) => {
-		https.get(u, (res) => {
-			let raw = '';
-			res.on('data', (d) => raw += d);
-			res.on('end', () => resolve(raw));
-		}).on('error', reject);
+		const zlib = require('zlib');
+		const MAX_REDIRECTS = 5;
+
+		function getUrl(urlStr, redirectsLeft) {
+			if (redirectsLeft <= 0) return reject(new Error('Too many redirects'));
+			const urlObj = new URL(urlStr);
+			const options = {
+				hostname: urlObj.hostname,
+				path: urlObj.pathname + urlObj.search,
+				protocol: urlObj.protocol,
+				headers: {
+					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0 Safari/537.36',
+					'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+					'Accept-Encoding': 'gzip,deflate,br'
+				}
+			};
+
+			https.get(options, (res) => {
+				if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+					// follow redirect
+					const loc = res.headers.location.startsWith('http') ? res.headers.location : new URL(res.headers.location, urlStr).toString();
+					return getUrl(loc, redirectsLeft - 1);
+				}
+
+				let stream = res;
+				const enc = (res.headers['content-encoding'] || '').toLowerCase();
+				if (enc === 'gzip' || enc === 'x-gzip') stream = res.pipe(zlib.createGunzip());
+				else if (enc === 'br') stream = res.pipe(zlib.createBrotliDecompress());
+				else if (enc === 'deflate') stream = res.pipe(zlib.createInflate());
+
+				const chunks = [];
+				stream.on('data', (c) => chunks.push(c));
+				stream.on('end', () => {
+					const raw = Buffer.concat(chunks).toString('utf8');
+					// Optionally save raw HTML for debugging in CI or when explicitly requested
+					try {
+						if (process.env.GITHUB_ACTIONS === 'true' || process.env.SAVE_RAW === '1') {
+							const rawPath = path.join(OUT_DIR, 'raw.html');
+							fs.writeFileSync(rawPath, raw, 'utf8');
+							console.log('Saved raw HTML to', rawPath);
+						}
+					} catch (e) {
+						// ignore save errors
+					}
+					resolve(raw);
+				});
+			}).on('error', reject);
+		}
+
+		getUrl(u, MAX_REDIRECTS);
 	});
 }
 
