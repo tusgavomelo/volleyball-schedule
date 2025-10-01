@@ -16,9 +16,9 @@ on:
       ics_name:
         description: 'Optional ICS filename to write into ./generated/ (if omitted the job will run read-only)'
         required: false
-  schedule:
+  # schedule:
     # Run once per day (UTC) at 20:00
-    - cron: '0 20 * * *'
+    # - cron: '0 20 * * *'
 
 jobs:
   scrape:
