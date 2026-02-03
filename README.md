@@ -17,25 +17,10 @@ Run the scraper:
 ```bash
 # Required args: URL and TEAM_ID. Optional third arg is the ICS filename.
 # Read-only (no ICS written):
-node index.js "https://.../view=schedule" 132313
+node index.js "https://www.calgarysportsclub.com/schedules/winter-2026-monday-indoor-volleyball-intermediate-e" 135775
 
 # Write ICS into ./generated/<ICS_FILENAME>:
-node index.js "https://.../view=schedule" 132313 brazil-nuts-thursday.ics
-```
-
-Examples
---------
-
-Read-only (inspect parsing without writing ICS):
-
-```bash
-node index.js "https://.../view=schedule" 132313
-```
-
-Write ICS into `./generated/`:
-
-```bash
-node index.js "https://.../view=schedule" 132313 brazil-nuts-thursday.ics
+node index.js "https://www.calgarysportsclub.com/schedules/winter-2026-monday-indoor-volleyball-intermediate-e" 135775 brazil-nuts-thursday.ics
 ```
 
 Outputs
