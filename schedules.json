@@ -1,14 +1,22 @@
 [
   {
-    "name": "brazil-nuts-thursday",
+    "name": "brazil-nuts",
     "url": "https://www.calgarysportsclub.com/schedules/fall-2025-thursday-indoor-volleyball-recreational-plus-a",
-    "team": "132313",
-    "ics": "brazil-nuts-thursday.ics"
+    "team": "132313"
   },
   {
-    "name": "brazil-nuts-tuesday",
+    "name": "brazil-nuts",
     "url": "https://www.calgarysportsclub.com/schedules/fall-2025-tuesday-indoor-volleyball-intermediate-c",
-    "team": "132429",
-    "ics": "brazil-nuts-tuesday.ics"
+    "team": "132429"
+  },
+  {
+    "name": "caramelo-republic",
+    "url": "https://www.calgarysportsclub.com/schedules/spring-2026-tuesday-indoor-volleyball-recreational-plus-c",
+    "team": "137712"
+  },
+  {
+    "name": "caramelo-republic",
+    "url": "https://www.calgarysportsclub.com/schedules/spring-2026-thursday-indoor-volleyball-intermediate-a",
+    "team": "137715"
   }
 ]
