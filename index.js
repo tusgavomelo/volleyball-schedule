@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Simple first-pass scraper for Calgary Sports Club schedule pages.
-// Usage: node index.js [URL] [TEAM_ID]
-// Example: node index.js <url> 132313
+// Usage: node index.js --url <URL> --team <ID> [--output <file.ics>] [--name <display title>]
+//        Short: -u -t -o -n  |  help: --help
+// If --name is omitted, env VOLLEYBALL_EVENT_NAME is used (when set).
 
 import fs from 'fs';
 import path from 'path';
@@ -15,17 +16,113 @@ const __dirname = path.dirname(__filename);
 const OUT_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
 
-const argv = process.argv.slice(2);
-// Require URL and TEAM_ID as positional args (no defaults). Optional third arg is the ICS filename.
-if (argv.length < 2) {
-	console.error('Usage: node index.js <SCHEDULE_URL> <TEAM_ID> [ICS_FILENAME]');
-	console.error('If ICS_FILENAME is provided the script will write the .ics into ./generated/<ICS_FILENAME>');
+const rawArg = process.argv.slice(2);
+
+function printUsage() {
+	console.error(
+		'Usage: node index.js --url <SCHEDULE_URL> --team <TEAM_ID> [--output <file.ics>] [--name <TITLE>]',
+	);
+	console.error('  -u, --url       Schedule page URL (required)');
+	console.error('  -t, --team      Team id to filter (required)');
+	console.error('  -o, --output    ICS filename written under ./generated/ (optional; omit for read-only)');
+	console.error('  -n, --name      Display title for every game; bye weeks unchanged (optional)');
+	console.error('  --event-name     Same as --name');
+	console.error('  If --name is omitted, VOLLEYBALL_EVENT_NAME is used when set.');
+}
+
+function needValue(flag, i) {
+	const v = rawArg[i + 1];
+	if (v == null || v.startsWith('-')) {
+		console.error('Error: ' + flag + ' requires a value');
+		printUsage();
+		process.exit(2);
+	}
+	return { val: v, nextI: i + 1 };
+}
+
+let url;
+let TEAM_ID;
+let icsName;
+let eventNameOverride = (process.env.VOLLEYBALL_EVENT_NAME || '').trim() || null;
+
+for (let i = 0; i < rawArg.length; i++) {
+	const a = rawArg[i];
+	if (a === '-h' || a === '--help') {
+		printUsage();
+		process.exit(0);
+	}
+	if (a === '-u' || a === '--url') {
+		const n = needValue(a, i);
+		url = n.val;
+		i = n.nextI;
+		continue;
+	}
+	if (a === '-t' || a === '--team') {
+		const n = needValue(a, i);
+		TEAM_ID = n.val;
+		i = n.nextI;
+		continue;
+	}
+	if (a === '-o' || a === '--output') {
+		const n = needValue(a, i);
+		icsName = n.val;
+		i = n.nextI;
+		continue;
+	}
+	if (a === '-n' || a === '--name' || a === '--event-name') {
+		const n = needValue(a, i);
+		eventNameOverride = n.val;
+		i = n.nextI;
+		continue;
+	}
+	if (a.startsWith('-')) {
+		console.error('Unknown option:', a);
+		printUsage();
+		process.exit(2);
+	}
+	console.error('Positional arguments are not supported. Use --url, --team, etc.');
+	printUsage();
 	process.exit(2);
 }
-const url = argv[0];
-const TEAM_ID = argv[1];
-const icsName = argv[2]; // optional; presence controls whether we write an ICS file
+
+if (!url || !TEAM_ID) {
+	console.error('Error: --url and --team are required.');
+	printUsage();
+	process.exit(2);
+}
+
+if (icsName) {
+	icsName = path.basename(icsName);
+}
+if (eventNameOverride === '') {
+	eventNameOverride = null;
+}
 const TEAM_CLASS = `team_${TEAM_ID}`;
+
+/**
+ * Replaces the summary shown for each game. Original scraped title is kept in uidSummary
+ * (so event UIDs stay stable if you only change the display name) and prepended to DESCRIPTION.
+ * All-day (bye) events are left as-is.
+ */
+function applyEventNameOverride(events) {
+	if (!eventNameOverride) {
+		return events;
+	}
+	return events.map((ev) => {
+		if (ev.allDay) {
+			return ev;
+		}
+		const orig = ev.summary;
+		const baseDesc = (ev.description || '').trim();
+		const extra = `Scraped title: ${orig}${baseDesc ? '\n\n' : ''}${baseDesc}`;
+		return {
+			...ev,
+			uidSummary: orig,
+			summary: eventNameOverride,
+			description: extra,
+		};
+	});
+}
 
 // Determine whether to write an ICS file. If an ICS filename is provided we will write into ./generated
 const WRITE_ICS = Boolean(icsName);
@@ -74,6 +171,14 @@ function toICalDate(d) {
 	return `${y}${m}${day}T${hh}${mm}${ss}Z`;
 }
 
+function toICalDateValueLocal(d) {
+	const pad = (n) => String(n).padStart(2, '0');
+	const y = d.getFullYear();
+	const m = pad(d.getMonth() + 1);
+	const day = pad(d.getDate());
+	return `${y}${m}${day}`;
+}
+
 function buildICS(events = [], sourceUrl, calendarName) {
 	const headerLines = [
 		'BEGIN:VCALENDAR',
@@ -88,8 +193,25 @@ function buildICS(events = [], sourceUrl, calendarName) {
 	const body = events.map((ev, i) => {
 		// Create a stable UID per event so repeated runs produce the same file when content hasn't changed.
 		// Use start time + summary hash as the UID source.
-		const uidBase = ev.uid || `${ev.start.toISOString()}|${ev.summary}`;
+		const uidBase = ev.uid || `${ev.start.toISOString()}|${ev.uidSummary || ev.summary}`;
 		const uid = `${Buffer.from(uidBase).toString('base64').replace(/=/g, '')}-${i}@volleyball-schedule`;
+		if (ev.allDay) {
+			const startD = toICalDateValueLocal(ev.start);
+			// iCal all-day: DTEND is the exclusive end date (day after the last day of the event)
+			const endExclusive = new Date(ev.start.getFullYear(), ev.start.getMonth(), ev.start.getDate() + 1);
+			const endD = toICalDateValueLocal(endExclusive);
+			return [
+				'BEGIN:VEVENT',
+				`UID:${uid}`,
+				`DTSTAMP:${toICalDate(new Date())}`,
+				`DTSTART;VALUE=DATE:${startD}`,
+				`DTEND;VALUE=DATE:${endD}`,
+				`SUMMARY:${ev.summary}`,
+				`DESCRIPTION:${ev.description || ''}\\nSource: ${sourceUrl}`,
+				`LOCATION:${ev.location || ''}`,
+				'END:VEVENT',
+			].join('\r\n');
+		}
 		return [
 			'BEGIN:VEVENT',
 			`UID:${uid}`,
@@ -108,6 +230,9 @@ function buildICS(events = [], sourceUrl, calendarName) {
 }
 
 async function main() {
+	if (eventNameOverride) {
+		console.log('Display title for all game events:', eventNameOverride, '(bye weeks unchanged)');
+	}
 	console.log('Fetching', url);
 	const raw = await fetchUrl(url);
 	// Keep raw HTML in memory for parsing. We no longer persist raw.html to disk by default.
@@ -119,6 +244,29 @@ async function main() {
 		const scheduleRoot = $('.ssc-schedule-html').length ? $('.ssc-schedule-html') : $.root();
 		const weekEntries = scheduleRoot.find('.week-entry').toArray();
 		console.log('Found', weekEntries.length, 'week entries');
+		const matchEntryForTeam = (el) => {
+			const m = $(el);
+			return m.hasClass(TEAM_CLASS) || m.find(`.${TEAM_CLASS}`).length > 0;
+		};
+		const weekIncludesTeam = (week$) =>
+			week$.hasClass(TEAM_CLASS) || week$.find(`.${TEAM_CLASS}`).length > 0;
+		/** Date only (local midnight) from .game_date text, same heuristics as game rows for missing year */
+		const parseAllDayFromGameDate = (dateText) => {
+			if (!dateText) return new Date(NaN);
+			const timeText = '12:00 PM';
+			let dtString = `${dateText} ${timeText}`;
+			if (dateText && !/\d{4}/.test(dateText)) {
+				dtString = `${dateText} 2025 ${timeText}`;
+			}
+			let t = new Date(dtString);
+			if (isNaN(t)) {
+				const alt = dateText.replace(/,/g, '');
+				t = new Date(`${alt} ${timeText} 2025`);
+			}
+			if (isNaN(t)) return new Date(NaN);
+			return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+		};
+
 		for (const weekEl of weekEntries) {
 			const week = $(weekEl);
 			const dateEl = week.find('.game_date').first();
@@ -134,7 +282,7 @@ async function main() {
 
 				for (const meEl of alloc.find('.match-entry').toArray()) {
 					const me = $(meEl);
-					const hasTeamClass = me.hasClass(TEAM_CLASS) || me.find('.' + TEAM_CLASS).length > 0;
+					const hasTeamClass = matchEntryForTeam(meEl);
 					if (!hasTeamClass) continue;
 
 					const matchText = me.text().replace(/\s+/g, ' ').trim();
@@ -171,6 +319,31 @@ async function main() {
 					events.push({ start, end, summary, description, location: facility });
 				}
 			}
+
+			// Bye week: week is tagged for this team (e.g. class="week-entry team_123 ..."),
+			// no match-entry for this team, optional .game_notes with reason (all-day event).
+			if (!weekIncludesTeam(week)) continue;
+			const teamMatchCount = week.find('.match-entry').toArray().filter(matchEntryForTeam).length;
+			if (teamMatchCount > 0) continue;
+			const notesText = week.find('.game_notes').first().text().replace(/\s+/g, ' ').trim();
+			if (!dateText) continue;
+			const dayStart = parseAllDayFromGameDate(dateText);
+			if (isNaN(dayStart)) continue;
+			const summary = notesText
+				? `Bye week — ${notesText}`
+				: 'Bye week (no game scheduled)';
+			const description = notesText
+				? notesText
+				: 'No game scheduled for your team this week.';
+			events.push({
+				allDay: true,
+				uid: `bye|${toICalDateValueLocal(dayStart)}|${TEAM_ID}|${notesText}`,
+				start: dayStart,
+				end: new Date(dayStart.getTime() + 24 * 60 * 60 * 1000),
+				summary,
+				description,
+				location: '',
+			});
 		}
 	} catch (err) {
 		console.warn('HTML parse failed:', String(err));
@@ -180,7 +353,7 @@ async function main() {
 		console.warn('No events parsed — inspect data/raw.html to craft selectors.');
 	}
 
-		// Merge events that occur on the same calendar day into a single event
+		// Merge timed events on the same calendar day (all-day byes are kept separate)
 		function dayKey(date) {
 			if (!date || isNaN(date)) return null;
 			const y = date.getFullYear();
@@ -189,8 +362,10 @@ async function main() {
 			return `${y}-${m}-${d}`;
 		}
 
+		const timed = events.filter((e) => !e.allDay);
+		const byes = events.filter((e) => e.allDay);
 		const byDay = new Map();
-		for (const ev of events) {
+		for (const ev of timed) {
 			if (!ev.start || isNaN(ev.start)) continue; // skip unparsable
 			const key = dayKey(ev.start);
 			if (!key) continue;
@@ -221,7 +396,10 @@ async function main() {
 			merged.push({ start, end, summary, description, location });
 		}
 
-				const toShow = merged.length ? merged : events;
+		const mergedTimed = merged.length ? merged : timed;
+		const toShow = applyEventNameOverride(
+			[...mergedTimed, ...byes].sort((a, b) => a.start.getTime() - b.start.getTime())
+		);
 
 				// Emit ICS file for consumers (Google Calendar import/subscription)
 				if (WRITE_ICS) {
@@ -256,8 +434,12 @@ async function main() {
 				// Also print a readable summary to the console
 				console.log('\nParsed events (readable):\n');
 				for (const ev of toShow) {
-					const s = ev.start && !isNaN(ev.start) ? ev.start.toISOString() : 'INVALID';
-					const e = ev.end && !isNaN(ev.end) ? ev.end.toISOString() : 'INVALID';
+					const s = ev.allDay
+						? toICalDateValueLocal(ev.start) + ' (all day)'
+						: ev.start && !isNaN(ev.start) ? ev.start.toISOString() : 'INVALID';
+					const e = ev.allDay
+						? '(all day)'
+						: ev.end && !isNaN(ev.end) ? ev.end.toISOString() : 'INVALID';
 					console.log(`- ${s} -> ${e}`);
 					console.log(`  SUMMARY: ${ev.summary || ''}`);
 					if (ev.location) console.log(`  LOCATION: ${ev.location}`);

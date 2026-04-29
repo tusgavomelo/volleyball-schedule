@@ -12,16 +12,24 @@ Install dependencies:
 npm install
 ```
 
-Run the scraper:
+Run the scraper (all arguments are **named**; use `node index.js --help` for a full list):
 
 ```bash
-# Required args: URL and TEAM_ID. Optional third arg is the ICS filename.
-# Read-only (no ICS written):
-node index.js "https://www.calgarysportsclub.com/schedules/winter-2026-monday-indoor-volleyball-intermediate-e" 135775
+# Required: --url and --team. Read-only (no .ics file):
+node index.js --url "https://www.calgarysportsclub.com/schedules/winter-2026-monday-indoor-volleyball-intermediate-e" --team 135775
 
-# Write ICS into ./generated/<ICS_FILENAME>:
-node index.js "https://www.calgarysportsclub.com/schedules/winter-2026-monday-indoor-volleyball-intermediate-e" 135775 brazil-nuts-thursday.ics
+# Write ./generated/brazil-nuts-thursday.ics:
+node index.js \
+  --url "https://www.calgarysportsclub.com/schedules/winter-2026-monday-indoor-volleyball-intermediate-e" \
+  --team 135775 \
+  --output brazil-nuts-thursday.ics
+
+# Optional display name for every game (bye weeks unchanged; original title is in the description):
+node index.js --url "https://…" --team 135775 --output brazil-nuts.ics --name "Caramelo Republic"
+# Short: -u -t -o -n   |   If --name is omitted, env VOLLEYBALL_EVENT_NAME is used when set.
 ```
+
+`schedules.json` entries can include an optional `eventName` so `node scripts/run-schedules.js` passes `--name` for that row.
 
 Outputs
 -------
@@ -31,11 +39,12 @@ Outputs
 GitHub Actions
 --------------
 
-A workflow is provided at `.github/workflows/scrape.yml` which can be triggered manually via the Actions tab. It accepts three inputs:
+A workflow is provided at `.github/workflows/scrape.yml` which can be triggered manually via the Actions tab. It accepts these inputs:
 
 - `url` (required) — the schedule page URL
 - `team_id` (required) — team id to filter
 - `ics_name` (optional) — filename to write into `./generated/` (if omitted the job will run read-only)
+- `event_name` (optional) — display title for every **game** event (bye weeks unchanged); passed as `--name` to `index.js`
 
 The workflow no longer uploads generated ICS files as build artifacts. Instead, when an ICS filename is provided the job will write `generated/<ICS_FILENAME>` and commit & push that file back to the repository.
 

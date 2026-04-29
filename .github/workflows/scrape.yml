@@ -16,6 +16,9 @@ on:
       ics_name:
         description: 'Optional ICS filename to write into ./generated/ (if omitted the job will run read-only)'
         required: false
+      event_name:
+        description: 'Optional: use this as every game event title (passes --name to index.js; bye weeks unchanged)'
+        required: false
   # schedule:
     # Run once per day (UTC) at 20:00
     # - cron: '0 20 * * *'
@@ -47,10 +50,18 @@ jobs:
           if [ -n "${{ inputs.url }}" ] && [ -n "${{ inputs.team_id }}" ]; then
             if [ -n "${{ inputs.ics_name }}" ]; then
               echo "Manual run: URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} ICS=${{ inputs.ics_name }}"
-              node index.js "${{ inputs.url }}" "${{ inputs.team_id }}" "${{ inputs.ics_name }}"
+              if [ -n "${{ inputs.event_name }}" ]; then
+                node index.js --url "${{ inputs.url }}" --team "${{ inputs.team_id }}" --output "${{ inputs.ics_name }}" --name "${{ inputs.event_name }}"
+              else
+                node index.js --url "${{ inputs.url }}" --team "${{ inputs.team_id }}" --output "${{ inputs.ics_name }}"
+              fi
             else
               echo "Manual run: URL=${{ inputs.url }} TEAM=${{ inputs.team_id }} (read-only)"
-              node index.js "${{ inputs.url }}" "${{ inputs.team_id }}"
+              if [ -n "${{ inputs.event_name }}" ]; then
+                node index.js --url "${{ inputs.url }}" --team "${{ inputs.team_id }}" --name "${{ inputs.event_name }}"
+              else
+                node index.js --url "${{ inputs.url }}" --team "${{ inputs.team_id }}"
+              fi
             fi
           else
             echo "No manual inputs provided; running schedules.json runner"

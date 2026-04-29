@@ -27,7 +27,13 @@ for (const s of schedules) {
   const icsName = getIcsName(s.url, s.name);
   console.log('Running schedule:', s.name, '->', icsName);
   const scriptPath = path.join(__dirname, '..', 'index.js');
-  const args = [scriptPath, s.url, s.team, icsName];
+  const args = [scriptPath, '--url', s.url, '--team', s.team];
+  if (icsName) {
+    args.push('--output', icsName);
+  }
+  if (s.eventName) {
+    args.push('--name', s.eventName);
+  }
   const res = spawnSync('node', args, { stdio: 'inherit' });
   if (res.status !== 0) {
     console.error('Schedule failed:', s.name);

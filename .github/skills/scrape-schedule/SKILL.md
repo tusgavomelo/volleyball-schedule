@@ -38,7 +38,7 @@ data/                 # Debug artifacts: raw.html, generated.ics (gitignored)
 ### Run a single schedule
 
 ```bash
-node index.js <SCHEDULE_URL> <TEAM_ID> [ICS_FILENAME]
+node index.js --url <SCHEDULE_URL> --team <TEAM_ID> [--output <file.ics>] [--name <TITLE>]
 ```
 
 - `SCHEDULE_URL` — full URL to the Calgary Sports Club schedule page
@@ -47,7 +47,7 @@ node index.js <SCHEDULE_URL> <TEAM_ID> [ICS_FILENAME]
 
 Example (Thursday league):
 ```bash
-node index.js "https://www.calgarysportsclub.com/schedules/fall-2025-thursday-indoor-volleyball-recreational-plus-a" 132313 brazil-nuts-thursday.ics
+node index.js --url "https://www.calgarysportsclub.com/schedules/fall-2025-thursday-indoor-volleyball-recreational-plus-a" --team 132313 --output brazil-nuts-thursday.ics
 ```
 
 ### Run all schedules
@@ -67,18 +67,18 @@ This reads `schedules.json` and runs `index.js` for each entry sequentially. It 
      "name": "descriptive-name",
      "url": "https://www.calgarysportsclub.com/schedules/<season-page-slug>",
      "team": "<TEAM_ID>",
-     "ics": "<output-filename>.ics"
+     "eventName": "Display name for every game (optional, adds --event-name)"
    }
    ```
 3. Find the team ID: inspect the schedule page HTML, look for CSS classes like `team_123456` on match rows
-4. Run the single schedule to verify: `node index.js "<url>" "<team_id>" "<filename>.ics"`
+4. Run the single schedule to verify: `node index.js --url "<url>" --team "<id>" --output "<filename>.ics"` (optional: `--name "…"`; bye weeks unchanged)
 5. Verify output in `generated/<filename>.ics`
 
 ### Debug missing or incorrect events
 
 1. Set `SAVE_RAW=1` and run the scraper to save the raw HTML:
    ```bash
-   SAVE_RAW=1 node index.js "<url>" "<team_id>"
+   SAVE_RAW=1 node index.js --url "<url>" --team "<team_id>"
    ```
 2. Open `data/raw.html` and inspect the page structure
 3. Look for `.week-entry` containers → `.allocation-entry` → `.match-entry` with class `team_<ID>`
